@@ -6,11 +6,11 @@ repository_owner: "REPO_OWNER" # Required
 ## Default Android SDK version is 33, uncomment to build with different, default dist is adopt, uncomment to use different dist
 ## Image variant is alpine by default, uncomment to use different image variant for the specified dist
 android:
-  version: 33
+  version: 33.0.0
   #extra_args: <extra arguments>
   #extra_targets: <extra-targets parameters>   # (optional) Required if deploying to AWS Device Farm or Google Firebase Test Lab
   sdks:
-    - android
+    - 32
   destinations:
     - "Pixel 6"
 #    - platform=iOS Simulator,arch=arm64,OS=18.5,name=iPhone 16 Pro
