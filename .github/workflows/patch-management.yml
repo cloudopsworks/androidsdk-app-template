@@ -82,7 +82,7 @@ jobs:
           openai_api_key: ${{ secrets.OPENAI_API_KEY }}
 
       - name: Java Patchwork Workflow
-        uses: ./bp/ci/ai/patchwork/autofix/xcode
+        uses: ./bp/ci/ai/patchwork/autofix/androidsdk
         with:
           #bot_user: ${{ vars.BOT_USER }}
           token: ${{ secrets.BOT_TOKEN }}
@@ -122,7 +122,7 @@ jobs:
           openai_api_key: ${{ secrets.OPENAI_API_KEY }}
 
       - name: Init Patchwork Java
-        uses: ./bp/ci/ai/patchwork/dependency-upgrade/xcode
+        uses: ./bp/ci/ai/patchwork/dependency-upgrade/androidsdk
         with:
           #bot_user: ${{ vars.BOT_USER }}
           token: ${{ secrets.BOT_TOKEN }}

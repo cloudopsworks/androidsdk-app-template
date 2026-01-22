@@ -65,11 +65,15 @@ on:
         type: string
         default: ''
       android_sdk:
-        description: 'Xcode SDK to build and test'
+        description: 'Android SDK SDK to build and test'
         required: true
         type: string
       android_destination:
-        description: 'Xcode Destination to build and test'
+        description: 'Android SDK Destination to build and test'
+        required: true
+        type: string
+      android_configuration:
+        description: 'Android Configuration, debug, release, etc.'
         required: true
         type: string
     secrets:
@@ -133,6 +137,7 @@ jobs:
           environment: ${{ steps.config.outputs.environment }}
           android_sdk: ${{ inputs.android_sdk }}
           android_destination: ${{ inputs.android_destination }}
+          android_configuration: ${{ inputs.android_configuration }}
 
       - name: Deploy Azure
         if: ${{ inputs.cloud == 'AZURE' }}
@@ -151,6 +156,7 @@ jobs:
           environment: ${{ steps.config.outputs.environment }}
           android_sdk: ${{ inputs.android_sdk }}
           android_destination: ${{ inputs.android_destination }}
+          android_configuration: ${{ inputs.android_configuration }}
 
       - name: Deploy GCP
         if: ${{ inputs.cloud == 'GCP' }}
@@ -170,3 +176,4 @@ jobs:
           environment: ${{ steps.config.outputs.environment }}
           android_sdk: ${{ inputs.android_sdk }}
           android_destination: ${{ inputs.android_destination }}
+          android_configuration: ${{ inputs.android_configuration }}

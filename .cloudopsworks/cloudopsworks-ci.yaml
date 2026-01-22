@@ -7,7 +7,7 @@
 #     Distributed Under Apache v2.0 License
 #
 zipGlobs:
-  - "build/*.apk"
+  - "app/build/outputs/apk/{android_configuration}/*.apk"
 excludeGlobs:
   - Dockerfile
   - .helmignore
@@ -26,6 +26,7 @@ excludeGlobs:
   - .tronador
   - Makefile
   - apifiles/*
+  - .gradle/*
 
 # Repo & CD Configurations
 # Some of them previously managed in OWNERS file
