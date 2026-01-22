@@ -7,7 +7,7 @@ YQ ?= $(INSTALL_PATH)/yq
 
 -include $(shell curl -sSL -o .tronador "https://cowk.io/acc"; echo .tronador)
 
-## Xcode Version Bump and creates VERSION File - Uses always the FullSemVer from GitVersion (no need to prepend the 'v').
+## Android SDK Version Bump and creates VERSION File - Uses always the FullSemVer from GitVersion (no need to prepend the 'v').
 version: packages/install/gitversion
 	$(call assert-set,GITVERSION)
 ifeq ($(GIT_IS_TAG),1)
