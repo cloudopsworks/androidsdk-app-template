@@ -3,10 +3,11 @@ organization_unit: "ORG_UNIT"
 environment_name: "ENV_NAME"
 repository_owner: "REPO_OWNER" # Required
 #
-## Default Android SDK version is 33, uncomment to build with different, default dist is adopt, uncomment to use different dist
-## Image variant is alpine by default, uncomment to use different image variant for the specified dist
+## Default Android SDK version is 16.0 (long number), uncomment to build with different, default dist is adopt, uncomment to use different dist
+## Refer to android sdk https://developer.android.com/studio#command-line-tools-only
 android:
-  version: 33.0.0
+  version: '12266719'                          # (optional) Android SDK Version to use, defaults to Android SDK 16.0 (long number: 12266719)
+  #packages: 'tools platform-tools'            # (optional) Android SDK Packages to install, defaults to tools & platform-tools
   #extra_args: <extra arguments>
   #extra_targets: <extra-targets parameters>   # (optional) Required if deploying to AWS Device Farm or Google Firebase Test Lab
   sdks:

@@ -86,14 +86,14 @@ jobs:
         id: config
         uses: ./bp/ci/config
 
-      - name: XCode Configuration
+      - name: Android SDK Configuration
         id: xconfig
         uses: ./bp/ci/androidsdk/config
         with:
           environment: ${{ steps.config.outputs.environment }}
 
   code-build:
-    name: 'Xcode Build - Branch: ${{ github.ref_name }}'
+    name: 'Android SDK Build - Branch: ${{ github.ref_name }}'
     needs:
       - preload
     strategy:
@@ -111,13 +111,13 @@ jobs:
           source_ref: ${{ github.head_ref }}
           blueprint_ref: 'v5.10'
 
-      - name: XCode Configuration
+      - name: Android SDK Configuration
         id: xconfig
         uses: ./bp/ci/androidsdk/config
         with:
           environment: ${{ needs.preload.outputs.environment }}
 
-      - name: Build XCode Project
+      - name: Build Android SDK Project
         id: build
         uses: ./bp/ci/androidsdk/build
         with:

@@ -61,6 +61,7 @@ jobs:
       environment: ${{ steps.config.outputs.environment }}
       android_sdks: ${{ steps.xconfig.outputs.android_sdks }}
       android_destinations: ${{ steps.xconfig.outputs.android_destinations }}
+      android_configuration: ${{ steps.xconfig.outputs.android_configuration }}
     steps:
       - name: Checkout w/Blueprint
         uses: cloudopsworks/blueprints/cd/checkout@v5.10
@@ -94,7 +95,7 @@ jobs:
         with:
           blueprint_ref: 'v5.10'
 
-      - name: XCode Configuration
+      - name: Android SDK Configuration
         id: xconfig
         uses: ./bp/ci/androidsdk/config
         with:
@@ -113,13 +114,14 @@ jobs:
           android_extra_args: ${{ steps.xconfig.outputs.android_extra_args }}
           android_extra_targets: ${{ steps.xconfig.outputs.android_extra_targets }}
           android_configuration: ${{ steps.xconfig.outputs.android_configuration }}
+          android_packages: ${{ steps.xconfig.outputs.android_packages }}
 
       - name: Save Build Artifacts
         uses: ./bp/ci/androidsdk/artifacts
         with:
-          android_scheme: ${{ matrix.android_scheme }}
           android_sdk: ${{ matrix.android_sdk }}
           android_destination: ${{ matrix.android_destination }}
+          android_configuration: ${{ steps.xconfig.outputs.android_configuration }}
 
   release:
     name: 'Generate Release'
@@ -187,7 +189,6 @@ jobs:
       (needs.code-build.result == 'success')
     strategy:
       matrix:
-        android_scheme: ${{ fromJSON(needs.preload.outputs.android_schemes) }}
         android_sdk: ${{ fromJSON(needs.preload.outputs.android_sdks) }}
         android_destination: ${{ fromJSON(needs.preload.outputs.android_destinations) }}
     uses: ./.github/workflows/deploy.yml
@@ -206,6 +207,7 @@ jobs:
       semver: ${{ needs.code-build.outputs.semver }}
       android_sdk: ${{ matrix.android_sdk }}
       android_destination: ${{ matrix.android_destination }}
+      android_configuration: ${{ needs.preload.outputs.android_configuration }}
     secrets:
       token: ${{ secrets.BOT_TOKEN }}
       aws_access_key_id: ${{ secrets.DEPLOYMENT_AWS_ACCESS_KEY_ID }}
