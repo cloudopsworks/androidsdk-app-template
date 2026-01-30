@@ -30,6 +30,8 @@ android:
 #  device_farm_name: DEVICE_FARM_NAME
 #  device_farm_pool: DEVICE_FARM_POOL_NAME # (optional) If there is a Farm Pool Defined if not, define specific device below.
 #  device:                                 # (optional) Required if Farm Pool is not defined.
+#    # To retrieve device list for these details:
+#    #   aws devicefarm list-devices --region us-west-2 --filters attribute=PLATFORM,operator=EQUALS,values=Android --query 'devices[].[model,formFactor,os]' --output table
 #    form_factor: "PHONE"
 #    model: "Google Pixel 9"
 #    os_version: "16"
@@ -56,6 +58,8 @@ android:
 #  build_impresonate_sa: "GCP project Service Account e-mail" # Optional: when existing role is different for build and deploy
 #  deploy_impersonate_sa: "GCP project Service Account e-mail" # Optional: when existing role is different for build and deploy
 #  devices:
+#    # To retrieve device list for these details:
+#    #   gcloud firebase test android models list
 #    - model_id: "shiba" # Pixel 8
 #      version_id: "34"
 #      locale_id: "en_US"
