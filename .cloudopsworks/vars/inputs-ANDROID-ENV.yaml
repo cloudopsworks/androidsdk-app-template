@@ -1,6 +1,6 @@
-# This file contains the environment variables for the Kubernetes deployment
+# This file contains the environment variables for Android deployment
 environment: "dev|uat|prod|demo"
-#runner_set: "ubuntu-latest"
+#runner_set: "ubuntu-latest" # Optional: when using self-hosted runners
 disable_deploy: true     # (optional) comment out if iOS Application has UI Tests or XCtests and build_for_testing=true in inputs-global.yaml
 android:
   configuration: Debug | Release | <...>

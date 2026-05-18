@@ -75,3 +75,11 @@ dist
 .tronador*.mk
 .tronador
 tronador/
+
+### AI Agents ###
+.claude/
+.gstack/
+.opencode/
+.omc/
+.omx/
+.ai/
