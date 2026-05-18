@@ -1,0 +1,386 @@
+# README-TEMPLATE.yaml
+# This file documents the androidsdk-app-template for derived repositories.
+# It is a reference guide — not runtime configuration. Derived repos should
+# update README.md to describe the actual application and may keep or remove this file.
+
+template:
+  name: androidsdk-app-template
+  description: >
+    Starter template for Android SDK applications using the Cloud Ops Works GitHub Actions
+    and deployment conventions. The pipeline builds Android APKs/AABs and runs UI tests
+    against real devices on AWS Device Farm or Google Firebase Test Lab.
+  repository: https://github.com/cloudopsworks/androidsdk-app-template
+
+what_it_gives_you:
+  - Android Gradle build pipeline (Kotlin DSL) producing APK/AAB artifacts
+  - Cloud Ops Works CI/CD configuration in .cloudopsworks/
+  - GitHub Actions workflows in .github/workflows/ for PR builds, main builds, deploys, and cleanup
+  - Deployment input samples for AWS Device Farm and GCP Firebase Test Lab under .cloudopsworks/vars/
+  - Dual GitVersion presets (GitFlow and GitHub Flow) under .cloudopsworks/
+  - Release and version helpers via Makefile (powered by Tronador)
+  - Optional security scanning via Snyk, Semgrep, and SonarQube
+  - JIRA integration for release management
+  - DependencyTrack for software bill of materials
+
+repository_layout:
+  description: Top-level structure of a repository derived from this template.
+  tree:
+    .cloudopsworks/:
+      _VERSION: Current template version (e.g. v5.x.y)
+      cloudopsworks-ci.yaml: Main CI/CD configuration — branch protection, reviewers, CD targets
+      gitversion_gitflow.yaml: GitVersion preset for GitFlow branching strategy
+      gitversion_githubflow.yaml: GitVersion preset for GitHub Flow branching strategy
+      vars/:
+        inputs-global.yaml: Shared settings — Android SDK config, cloud target, security toggles
+        inputs-ANDROID-ENV.yaml: Per-environment Android build and device configuration
+        preview/: Preview environment configuration fragments (if enabled)
+    .github/workflows/:
+      pr-build.yml: Pull-request validation build
+      main-build.yml: Main/master branch build and artifact publication
+      deploy.yml: Device-farm test run dispatched per environment
+      pr-close.yaml: Preview environment cleanup on PR close
+      jira-integration.yml: Jira ticket state transitions on release events
+      scan.yml: Security and dependency scanning workflow
+      automerge.yml: Automatic merge for approved dependency-update PRs
+      process-owners.yml: CODEOWNERS and reviewer enforcement
+      slash-commands.yml: Slash command handler for PR interactions
+      environment-destroy.yml: Tear down a named test environment
+      environment-unlock.yml: Unlock a locked deployment environment
+    app/: Android application source module (Kotlin)
+    buildscripts/: Shared Gradle build logic and convention plugins
+    build.gradle.kts: Root Gradle build file
+    settings.gradle.kts: Gradle settings — module declarations and plugin management
+    gradle.properties: Gradle JVM and build flags
+    gradlew / gradlew.bat: Gradle wrapper scripts
+    spotless/: Code style and formatting configuration
+    Makefile: version and code/init targets powered by Tronador
+    gradle.properties: Gradle project properties (managed by make code/init)
+    README.md: Application-specific description (replace this in derived repos)
+    README-TEMPLATE.yaml: This file — template usage guide
+
+quick_start:
+  step_1_create_repo:
+    description: Create a repository from this template using GitHub's "Use this template" flow.
+    then: |
+      git clone <your-new-repo-url>
+      cd <your-new-repo>
+
+  step_2_bootstrap_package_metadata:
+    description: >
+      Run make code/init to set the correct project name and version derived from GitVersion's
+      MajorMinorPatch output. Requires gitversion, gh CLI, and yq.
+    command: make code/init
+    requires:
+      - gitversion (installed automatically by Tronador via make)
+      - gh CLI (authenticated)
+      - yq
+
+  step_3_update_android_project:
+    description: >
+      Replace the JetSnack sample application with the real Android project source.
+      Update app/build.gradle.kts, settings.gradle.kts, and the application module
+      to reflect the actual package name, SDK targets, and dependencies.
+    files_to_update:
+      - app/build.gradle.kts: applicationId, compileSdk, targetSdk, minSdk, dependencies
+      - settings.gradle.kts: rootProject.name and module list
+      - gradle.properties: org.gradle.jvmargs and project-specific flags
+      - README.md: application description, architecture notes, runbook links
+
+  step_4_choose_branching_model:
+    description: >
+      Copy the GitVersion preset that matches your branching strategy to the path
+      expected by your downstream automation.
+    options:
+      gitflow: cp .cloudopsworks/gitversion_gitflow.yaml .cloudopsworks/gitversion.yaml
+      github_flow: cp .cloudopsworks/gitversion_githubflow.yaml .cloudopsworks/gitversion.yaml
+
+  step_5_configure_cloudopsworks:
+    description: >
+      Configure .cloudopsworks/cloudopsworks-ci.yaml and the input files.
+      See cloudopsworks_config and environment_inputs sections below.
+
+versioning:
+  description: >
+    Two GitVersion presets are included. Choose the one that matches your branching strategy
+    and copy it to the path your automation expects (e.g. .cloudopsworks/gitversion.yaml).
+
+  gitflow:
+    file: .cloudopsworks/gitversion_gitflow.yaml
+    use_when: >
+      Your delivery process uses develop, feature/*, release/*, hotfix/*, support/* branches.
+    branch_labels:
+      develop: alpha (minor increment, continuous delivery)
+      release: beta (minor increment, manual deployment)
+      hotfix: beta (patch increment, manual deployment)
+      main/master: "" (patch increment, production)
+    example_copy: cp .cloudopsworks/gitversion_gitflow.yaml .cloudopsworks/gitversion.yaml
+
+  github_flow:
+    file: .cloudopsworks/gitversion_githubflow.yaml
+    use_when: >
+      Your delivery process centers on main/master, short-lived feature branches,
+      pull requests, and optional release/* branches.
+    branch_labels:
+      main/master: "" (patch increment, production)
+      release: beta (patch increment, manual deployment)
+      feature: "{BranchName}" (inherit, manual deployment)
+    example_copy: cp .cloudopsworks/gitversion_githubflow.yaml .cloudopsworks/gitversion.yaml
+
+  local_version_helper:
+    description: Write computed version to VERSION file without tagging.
+    command: make version
+
+cloudopsworks_config:
+  main_file: .cloudopsworks/cloudopsworks-ci.yaml
+  description: Controls the CI/CD pipeline behavior for the repository.
+
+  config_section:
+    branchProtection: Enable or disable GitHub branch protection rules
+    gitFlow:
+      enabled: Toggle GitFlow branch support in the pipeline
+      supportBranches: Enable support/* long-lived branches
+    requiredReviewers: Minimum number of approvals before merging to main/master
+    reviewers: GitHub usernames or org/team slugs allowed to approve PRs
+    owners: GitHub usernames or org/team slugs allowed to push to protected branches
+    contributors:
+      admin: Teams with admin access
+      push: Teams with push access (e.g. cloudopsworks/engineering)
+
+  cd_section:
+    cloud: >
+      Target cloud provider. One of: aws | gcp
+    cloud_type: >
+      Deployment mechanism. For Android testing: device-farm (AWS) or firebase-test-lab (GCP)
+    runner_set: >
+      Optional: GitHub Actions runner label. Omit to use GitHub-hosted runners.
+
+environment_inputs:
+  description: >
+    Per-environment configuration lives in .cloudopsworks/vars/.
+    Configure inputs-global.yaml first, then fill in inputs-ANDROID-ENV.yaml
+    for each deployment environment.
+
+  global:
+    file: .cloudopsworks/vars/inputs-global.yaml
+    description: Shared settings used by all pipelines. Configure this first.
+    required_fields:
+      organization_name: Short org identifier (e.g. myorg)
+      organization_unit: Business unit or team name
+      environment_name: Logical environment label (dev, uat, prod, etc.)
+      repository_owner: GitHub organization or user that owns this repo
+      cloud: Target cloud — aws | gcp
+      cloud_type: device-farm (AWS Device Farm) or firebase-test-lab (GCP Firebase)
+    android_section:
+      version: >
+        Android SDK command-line tools version number (long numeric ID).
+        Default: 12266719 (SDK 16.0). Find versions at
+        https://developer.android.com/studio#command-line-tools-only
+      sdks: List of Android API levels to install (e.g. [32, 33, 34])
+      destinations: >
+        List of emulator or device targets for local/preview runs.
+        Format: "Device Name" or "platform=...,arch=...,OS=...,name=..."
+      packages: >
+        Optional: SDK packages to install. Defaults to "tools platform-tools".
+      extra_args: Optional extra arguments passed to the build step
+      extra_targets: >
+        Optional: Required when deploying to AWS Device Farm or Firebase Test Lab.
+        Specifies additional Gradle targets for test artifact generation.
+    optional_security_scanning:
+      snyk: Enable Snyk dependency scanning
+      semgrep: Enable Semgrep SAST scanning
+      sonarqube:
+        enabled: Enable SonarQube code quality gate
+        fail_on_quality_gate: Fail the build if quality gate is not passed
+        sources_path: Path to source files (default "/")
+        tests_path: Path to test files
+        exclusions: Glob patterns to exclude from analysis
+        branch_disabled: Set true only for SonarQube Community Edition
+    optional_integrations:
+      jira:
+        enabled: Toggle Jira release management integration
+        project_id: Jira project numeric ID (falls back to org-level secret)
+        project_key: Jira project key (falls back to org-level secret)
+      dependencyTrack:
+        enabled: Enable DependencyTrack SBOM submission (default true)
+        type: Component type — Application | Library | Framework (default Application)
+
+  per_environment:
+    file: .cloudopsworks/vars/inputs-ANDROID-ENV.yaml
+    description: >
+      Environment-specific Android build and device-farm configuration.
+      One file per deployment environment (dev, uat, prod, etc.).
+    required_fields:
+      environment: Target environment label (dev | uat | prod | demo)
+      android.configuration: Build variant — Debug | Release | <custom>
+    optional_fields:
+      runner_set: Self-hosted runner label for this environment
+      disable_deploy: >
+        Set true to skip the device-farm run for this environment.
+        Useful when the environment has no UI tests or no device-farm access.
+    aws_device_farm:
+      description: AWS Device Farm configuration. Uncomment the aws block to enable.
+      fields:
+        aws.region: AWS region where the Device Farm project resides (must be us-west-2)
+        aws.sts_role_arn: Shared IAM role for build and deploy phases
+        aws.build_sts_role_arn: Separate IAM role for the build phase
+        aws.deploy_sts_role_arn: Separate IAM role for the deploy (test-run) phase
+        aws.secrets_path_filter: AWS Secrets Manager path prefix for injected secrets
+        aws.interactive_sessions: Enable Device Farm remote access sessions (cost impact)
+        aws.device_farm_name: Name of the Device Farm project
+        aws.device_farm_pool: >
+          Device pool name (optional — use instead of specific device definition).
+        aws.device: >
+          Specific device to run tests on (optional — use if no pool is defined).
+          Sub-fields: form_factor (PHONE | TABLET), model, os_version, max_devices.
+          Run: aws devicefarm list-devices --region us-west-2 to discover available devices.
+        aws.test_script_path: Path to test package artifacts relative to repo root
+        aws.test_script_type: >
+          Test framework type. One of:
+          BUILTIN_FUZZ | APPIUM_NODE_TEST_PACKAGE | APPIUM_NODE_TEST_SPEC |
+          INSTRUMENTATION_TEST_PACKAGE | INSTRUMENTATION_TEST_SPEC |
+          UIAUTOMATOR_TEST_PACKAGE | XCTEST_UI_TEST_SPEC | (and other Appium/XCTest variants)
+        aws.session_config: >
+          Interactive session device definition (form_factor, model, os_version).
+          Only set when interactive_sessions is true.
+        aws.pod_identity:
+          enabled: Enable EKS Pod Identity IAM binding
+          iam_role_name: IAM role name for pod identity
+    gcp_firebase_test_lab:
+      description: GCP Firebase Test Lab configuration. Uncomment the gcp block to enable.
+      fields:
+        gcp.region: GCP region
+        gcp.project_id: GCP project ID hosting the Firebase Test Lab
+        gcp.impersonate_sa: Service account email for unified build+deploy role
+        gcp.build_impresonate_sa: Service account for the build phase
+        gcp.deploy_impresonate_sa: Service account for the deploy (test-run) phase
+        gcp.secrets_path_filter: GCP Secret Manager path prefix for injected secrets
+        gcp.devices: >
+          List of physical or virtual devices. Each entry requires:
+          model_id, version_id, locale_id, orientation.
+          Run: gcloud firebase test android models list to discover available devices.
+        gcp.test_lab_bucket: GCS bucket where test results and artifacts are stored
+        gcp.test_script_path: Path to test package artifacts relative to repo root
+        gcp.test_script_type: >
+          Test type. One of: robo | instrumentation | game-loop
+        gcp.pod_identity:
+          enabled: Enable GCP Workload Identity binding
+          service_account_name: Kubernetes service account name for workload identity
+    azure:
+      description: >
+        Azure configuration is available for secret injection from Azure Key Vault
+        but there is no native Azure device-farm deployment target. Use aws or gcp
+        for device testing.
+      fields:
+        azure.resource_group: Azure resource group for Key Vault access
+        azure.build_resource_group: Resource group for the build phase
+        azure.deploy_resource_group: Resource group for the deploy phase
+        azure.keyvault_name: Azure Key Vault name for secret injection
+        azure.keyvault_secret_filter: Prefix filter for Key Vault secrets
+        azure.pod_identity:
+          enabled: Enable Azure Workload Identity binding
+          identity_name: Managed identity name
+
+android_build:
+  description: >
+    The pipeline builds Android APKs and/or AABs using Gradle. Build behavior
+    is driven by cloudopsworks-ci.yaml and the android section of inputs-global.yaml.
+  gradle_wrapper: Use ./gradlew — never install Gradle globally in the pipeline.
+  build_variants:
+    debug: Development and CI builds; signing uses the debug keystore.
+    release: Production and staging builds; signing requires a release keystore secret.
+  sdk_installation: >
+    The pipeline installs the Android SDK command-line tools version specified in
+    android.version and installs the API levels listed in android.sdks automatically.
+  artifact_types:
+    apk: Standard installable package, required for Device Farm and direct install.
+    aab: Android App Bundle for Google Play distribution.
+  test_artifacts: >
+    UI test APKs (app-debug-androidTest.apk or equivalent) are built separately
+    and referenced by test_script_path. Set extra_targets in inputs-global.yaml
+    to include the test APK build step.
+
+github_actions:
+  description: >
+    Workflows under .github/workflows/ automate the full delivery surface.
+    Configure the Cloud Ops Works input files first; most workflow behavior is
+    driven from those files.
+  workflows:
+    pr-build.yml:
+      trigger: pull_request
+      purpose: Lint, compile, unit-test, and security-scan on every PR
+      permissions: contents read, pull-requests write, issues write, checks write
+    main-build.yml:
+      trigger: push to main/master or develop
+      purpose: Full Gradle build, artifact upload, GitVersion tagging
+    deploy.yml:
+      trigger: workflow_dispatch (called by main-build or manually)
+      purpose: Run the test suite against real devices on the configured test platform
+      cloud_credentials_injected:
+        aws: AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_DEFAULT_REGION
+        gcp: GOOGLE_CREDENTIALS
+        azure: ARM_CLIENT_ID, ARM_CLIENT_SECRET
+      note: >
+        Credentials are scoped to the GitHub environment defined in the workflow.
+        Configure secrets at the environment level to prevent cross-environment leakage.
+    pr-close.yaml:
+      trigger: pull_request closed
+      purpose: Destroy preview environments for the closed PR
+    jira-integration.yml:
+      trigger: release published or workflow_dispatch
+      purpose: Transition Jira tickets linked to the release and post release notes
+    scan.yml:
+      trigger: schedule or workflow_dispatch
+      purpose: Periodic security and dependency scanning outside of the main build
+    automerge.yml:
+      trigger: pull_request labeled
+      purpose: Automatically merge approved dependency-update PRs
+    environment-destroy.yml:
+      trigger: workflow_dispatch
+      purpose: Tear down a named test or preview environment
+    environment-unlock.yml:
+      trigger: workflow_request
+      purpose: Unlock a locked GitHub deployment environment after a failed run
+
+onboarding_sequence:
+  description: Recommended order of operations for a new derived repository.
+  steps:
+    1: Create a repository from this template using GitHub's "Use this template".
+    2: Run make code/init to set the correct project name and version.
+    3: Replace the JetSnack sample with the real Android application source.
+    4: Update app/build.gradle.kts with the correct applicationId, SDK targets, and signing config.
+    5: Choose a branching strategy and copy the matching GitVersion preset.
+    6: Configure .cloudopsworks/cloudopsworks-ci.yaml — branch protection, reviewers, owners.
+    7: Fill in .cloudopsworks/vars/inputs-global.yaml — org info, Android SDK version, cloud target.
+    8: Fill in .cloudopsworks/vars/inputs-ANDROID-ENV.yaml — environment, build variant, device config.
+    9: Configure GitHub environment secrets for each deployment environment.
+    10: Open the first PR and validate CI/CD behavior end-to-end.
+
+minimum_checklist:
+  description: Gates before the first production release.
+  items:
+    - Android applicationId, versionName, and compileSdk reflect the real application
+    - One GitVersion strategy is selected and copied to the expected preset path
+    - .cloudopsworks/cloudopsworks-ci.yaml matches branch protection and reviewer requirements
+    - inputs-global.yaml placeholders (ORG_NAME, ORG_UNIT, ENV_NAME, REPO_OWNER) are replaced
+    - cloud and cloud_type in inputs-global.yaml are set to real values (not the pipe-delimited list)
+    - inputs-ANDROID-ENV.yaml placeholders (DEVICE_FARM_NAME, AWS_REGION, GCP_PROJECT, etc.) are replaced
+    - android.sdks lists the API levels needed for the application
+    - android.configuration is set to Debug or Release (not the pipe-delimited placeholder)
+    - disable_deploy is removed or set to false for environments that should run device tests
+    - GitHub environment secrets are configured for each deployment environment
+    - Release keystore is stored as a GitHub secret and referenced in the signing config
+    - README.md describes the actual application
+    - CI passes on a pull request to main/master
+
+maintainer_notes:
+  description: Guidelines for maintainers of this template repository.
+  guidance:
+    - Keep README-TEMPLATE.yaml aligned with files that actually exist in the template.
+    - Document new required placeholders or bootstrap steps when adding features.
+    - Document changes to branching or versioning conventions.
+    - When adding a new test platform target, add the Agents comment header to the inputs file
+      (e.g. "# Agents: cloud=aws ; cloud_type=device-farm") for tooling discoverability.
+    - Prefer making runner_set optional (commented out) so GitHub-hosted runners work
+      without any configuration in derived repos.
+    - Keep android.version updated when a new stable SDK command-line tools version is released.
+    - The JetSnack sample in app/ is for demonstration only — derived repos must replace it.
