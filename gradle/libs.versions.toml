@@ -40,7 +40,7 @@ kotlin = "2.3.0"
 kotlinx-serialization-json = "1.9.0"
 kotlinx_immutable = "0.4.0"
 ksp = "2.3.4"
-maps-compose = "7.0.0"
+maps-compose = "8.4.0"
 # @keep
 minSdk = "23"
 okhttp = "5.3.2"
